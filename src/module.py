@@ -76,10 +76,24 @@ class ChebyFilter(nn.Module):
         self.register_buffer('coeffs', coeffs)
     
     def forward(self, signal):
-        signal = signal.T
-        bases = self.cheby(x=self.laplacian, init=signal)
-        output = torch.einsum('K,KNB->BN', self.coeffs, bases)
-        return output
+        signal = signal.T  # (num_items, batch_size)
+
+        if self.order == 0:
+            return (self.coeffs[0] * signal).T
+
+        # Incremental weighted Chebyshev sum — avoids storing K+1 full tensors simultaneously.
+        # Memory: O(3 * N * B) instead of O((K+1) * N * B), ~(K/3)x reduction.
+        t0 = signal                       # T_0(L) * signal
+        t1 = self.laplacian * signal      # T_1(L) * signal
+        output = self.coeffs[0] * t0 + self.coeffs[1] * t1
+
+        for k in range(2, self.order + 1):
+            t2 = self.laplacian * t1 * 2 - t0
+            output = output + self.coeffs[k] * t2
+            t0 = t1
+            t1 = t2
+
+        return output.T
 
 class IdealFilter(nn.Module):
     def __init__(self, threshold, weight):

@@ -22,6 +22,8 @@ def test(model, test_dataloader, metrics, top_ks):
             pred_score = model.full_predict(observed_inter)
         # Rank top-k items based on the scores
         _, ranked_items = torch.topk(pred_score, k=max(top_ks))
+        ranked_items = ranked_items.cpu()
+        pred_score = None  # free GPU memory early
         # Check if the ranked items are in the label interactions
         relevance = [[item in label for item in ranked.tolist()]
                      for ranked, label in zip(ranked_items, label_inter)]
@@ -36,7 +38,9 @@ def test(model, test_dataloader, metrics, top_ks):
                 elif metric == 'precision':
                     result[i, j] += precision(relevance, k)
                 elif metric == 'mrr':  
-                    result[i, j] += mrr(relevance, k) 
+                    result[i, j] += mrr(relevance, k)
+        if torch.cuda.is_available():
+            torch.cuda.empty_cache()
     result /= len(test_dataloader.dataset)
     # Log results 
     header, values = '', ''

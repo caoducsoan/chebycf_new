@@ -1,7 +1,7 @@
 seed: 2024
 comment: chebycf_amazon-book
 device: cuda
-batch_size: 1024
+batch_size: 256
 
 dataset: amazon-book
 metrics: [recall, ndcg]
