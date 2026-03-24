@@ -7,6 +7,7 @@ from src.metric import recall, ndcg, precision, mrr
 
 def train(model, train_data, device):
     start_time = time.time()
+    logging.info('[TRAIN] Fitting model (this may take a while on CPU) ...')
     model.fit(train_data) # No convergence needed for training-free models
     model.to(device)
     logging.info('[TRAIN]')

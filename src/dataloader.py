@@ -64,6 +64,7 @@ def load_data(dataset, batch_size, device):
     test_dataloader = DataLoader(test_data,
                                  batch_size=batch_size,
                                  shuffle=False,
+                                 num_workers=0,
                                  collate_fn=lambda batch: collate_fn(batch, device))
     # Log dataset statistics
     logging.info(f'[DATASET] {dataset}')

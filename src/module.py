@@ -1,7 +1,8 @@
 import math
+import logging
 import numpy as np
 import scipy.sparse as sp
-from scipy.sparse.linalg import svds
+from sklearn.utils.extmath import randomized_svd
 import torch
 import torch.nn as nn
 from torch import spmm
@@ -103,8 +104,10 @@ class IdealFilter(nn.Module):
     
     def fit(self, inter):
         norm_inter = get_norm_inter(inter)
-        _, _, vt = svds(norm_inter, which='LM', k=self.threshold)
-        ideal_pass = torch.tensor(vt.T.copy())
+        logging.info(f'[IdealFilter] Computing top-{self.threshold} SVD (randomized) ...')
+        _, _, vt = randomized_svd(norm_inter, n_components=self.threshold, random_state=0)
+        logging.info(f'[IdealFilter] SVD done.')
+        ideal_pass = torch.tensor(vt.T.copy(), dtype=torch.float32)
         self.register_buffer('ideal_pass', ideal_pass) # shape (num_items, threshold)
         
     def forward(self, signal):
